@@ -1,52 +1,8 @@
 import { ObjectId } from 'mongodb'
-import bcrypt from 'bcrypt'
-import { User, validate } from '../models/user.model.js'
+import { User } from '../models/user.model.js'
 import Jwt from 'jsonwebtoken';
 const jwtPrivateKey = 'chatAppPrivateKey';
 
-const checkPseudoInUse = async (pseudo) => {
-  let result = await User.findOne({ pseudo: pseudo })
-  return result ? true : false
-}
-
-const create = async (req, res) => {
-  let status;
-  let response = {
-    success: false,
-    message: ''
-  }
-
-  try {
-    const { error } = validate(req.body)
-
-    if (error) {
-      status = 400
-      response.message = error.details[0].message
-    } else {
-      const isPseudoInUse = await checkPseudoInUse(req.body.pseudo)
-      if (isPseudoInUse) {
-        status = 400
-        response.message = 'This "Pseudo" is already picked'
-      } else {
-        let user = new User({
-          pseudo: req.body.pseudo,
-          password: req.body.password
-        })
-        const salt = await bcrypt.genSalt(10)
-        user.password = await bcrypt.hash(user.password, salt)
-
-        await user.save()
-        status = 200
-        response.success = true
-        response.message = 'User created'
-      }
-    }
-  } catch (err) {
-    status = 500
-    response.message = err.message
-  }
-  res.status(status).json(response)
-}
 
 const get_all = async (req, res) => {
   let status;
@@ -203,7 +159,6 @@ const checkUser = async (req, res) => {
 }
 
 export {
-  create,
   get_all,
   get_by_id,
   updateOne,

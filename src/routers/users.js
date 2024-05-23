@@ -1,11 +1,8 @@
 import express from 'express'
-import { create, get_all, get_by_id, updateOne, deleteOne, checkUser } from '../controller/user.controllers.js'
+import { get_all, get_by_id, updateOne, deleteOne, checkUser } from '../controller/user.controllers.js'
 import authMiddleware from '../middleware/auth.middleware.js'
 
 const userRouter = express.Router()
-
-//Create a new user
-userRouter.post('/new', create)
 
 //Log in
 userRouter.get("/check", checkUser);

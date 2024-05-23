@@ -31,7 +31,7 @@ function validateUser(user){
   const schema = Joi.object({
     email: Joi.string().email().required(),
     pseudo: Joi.string().required(),
-    password: Joi.string().min(5).required()
+    password: Joi.string().min(5).required(),
   })
 
   return schema.validate(user)
@@ -40,5 +40,5 @@ function validateUser(user){
 export {
   userSchema,
   User,
-  validateUser as validate
+  validateUser
 }

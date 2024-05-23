@@ -1,7 +1,7 @@
 import Jwt from 'jsonwebtoken';
 import { User } from '../models/user.model.js';
 import { ObjectId } from 'mongodb';
-const jwtPrivateKey = 'chatAppPrivateKey';
+const jwtPrivateKey = process.env.PRIVATE_KEY;
 
 const authMiddleware = async function (req, res, next) {
   const token = req.header('x-auth-token');
