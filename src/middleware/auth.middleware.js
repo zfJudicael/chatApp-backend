@@ -13,7 +13,6 @@ const authMiddleware = async function (req, res, next) {
     if(!result) {
       res.status(404).json({success: false, message: 'User not found'});
     }else {
-      // req.user = decoded; 
       next();
     }
   }
@@ -22,4 +21,45 @@ const authMiddleware = async function (req, res, next) {
   }
 }
 
-export default authMiddleware;
+
+
+class AuthMiddleware{
+  static async authenticated(req, res, next){
+    try {
+      const token = req.headers.authorization;
+      if(!token) throw new Error('TOKEN_NOT_PROVIDED')
+
+      const decoded = Jwt.verify(token, jwtPrivateKey);
+      const user = await User.findById(new ObjectId(decoded._id)).select(('-password'))
+      if(!user) throw new Error('USER_NOT_FOUND')
+      
+      next()
+    } catch (error) {
+      res.status(401).json({
+        success: false,
+        message: 'PLEASE_AUTHENTICATE'
+      })
+    }
+  }
+
+  static async setCurrentUser(req, res, next){
+    try {
+      const token = req.headers.authorization;
+      const decoded = Jwt.verify(token, jwtPrivateKey);
+      const user = await User.findById(new ObjectId(decoded._id)).select(('-password'))
+      req.currentUser = user;
+      
+      next()
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'PLEASE_AUTHENTICATE'
+      })
+    }
+  }
+}
+
+export {
+  authMiddleware,
+  AuthMiddleware
+}

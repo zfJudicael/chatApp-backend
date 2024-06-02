@@ -1,8 +1,8 @@
-import express from 'express'
-import { get_all, get_by_id, updateOne, deleteOne, checkUser } from '../controller/user.controllers.js'
-import authMiddleware from '../middleware/auth.middleware.js'
+import express from 'express';
+import { get_all, get_by_id, updateOne, deleteOne, checkUser } from '../controller/user.controllers.js';
+import {authMiddleware} from '../middleware/auth.middleware.js';
 
-const userRouter = express.Router()
+const userRouter = express.Router();
 
 //Log in
 userRouter.get("/check", checkUser);

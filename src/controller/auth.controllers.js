@@ -1,6 +1,9 @@
 import Joi from 'joi';
 import bcrypt from 'bcrypt';
 import { User, validateUser } from '../models/user.model.js';
+import Jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb'
+
 
 const checkEmailInUse = async (email)=>{
     let result = await User.findOne({ email : email })
@@ -84,7 +87,43 @@ const signIn = async (req, res)=>{
 }
 
 
+const getMe = async (req, res)=>{
+    let response = {
+        success: false,
+        message: '',
+        user : null
+    }
+    let status;
+
+    const token = req.headers.authorization;
+    const jwtPrivateKey = process.env.PRIVATE_KEY;
+    if(token){
+        try {
+            const decoded = Jwt.verify(token, jwtPrivateKey);
+            let result = await User.findById(new ObjectId(decoded._id)).select(('-password'))
+            if (!result) {
+                status = 404
+                response.message = 'USER_NOT_FOUND'
+            } else {
+                status = 200
+                response.user = result
+                response.success = true
+            };
+        } catch (error) {
+            status = 500
+            response.message = 'NOT_VALID_OR_EXPIRED_TOKEN'
+        } 
+    }else{
+        status = 403
+        response.message = 'TOKEN_MISSED'
+    }
+    
+    return res.status(status).json(response);
+}
+
+
 export {
     signUp,
-    signIn
+    signIn,
+    getMe
 }
