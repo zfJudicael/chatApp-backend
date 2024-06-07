@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import Jwt from 'jsonwebtoken';
+const jwtPrivateKey = 'chatAppPrivateKey';
 
 //Message
 const messageSchema = new mongoose.Schema({
@@ -6,6 +8,7 @@ const messageSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    to: mongoose.Schema.Types.ObjectId,
     value: String,
     createdAt: { type: Date, default: Date.now()}
 })
@@ -21,6 +24,12 @@ const conversationSchema = new mongoose.Schema({
     }],
     messages: [ messageSchema ]
 }, { timestamps: true });
+
+conversationSchema.methods.generateConvToken = function(){
+    const payload = { _id: this._id }
+    const token = Jwt.sign(payload, jwtPrivateKey, { expiresIn: '1d' })
+    return token
+}
 
 const Conversation = mongoose.model('Conversation', conversationSchema)
 

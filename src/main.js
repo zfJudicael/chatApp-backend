@@ -8,9 +8,8 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io'
 import { Message, Conversation } from './models/conversation.model.js';
-import { createConversation } from './controller/conversation.controller.js';
+import { addMessage, joinConversation } from './controller/conversation.controller.js';
 import { getMe } from './controller/auth.controllers.js';
-// import { AuthMiddleware } from './middleware/auth.middleware.js';
 
 
 const corsOptions = {
@@ -36,21 +35,27 @@ mongoose.connect(`${process.env.DATABASE_URI}${process.env.DATABASE_NAME}`)
 
 
 io.on('connection', (socket)=>{
-    console.log('A user connected');
-
-    // socket.on('createConversation', async (userId, name, callback)=>{
-    //     try {
-    //         await createConversation(userId, name)
-    //     } catch (error) {
-    //         console.log(error)
-    //         callback(error)
-    //     }
-    // })
-
-    socket.on('sendMessage', (message)=>{
-        console.log(message)
+    socket.on('logIn', async (userId)=>{
+        if(userId){
+            try {
+                const result = await Conversation.find({ members: userId }).select(('-name -members -messages -createdAt -updatedAt'))
+                let room = []
+                result.forEach((conv)=>{
+                    room.push(conv.id)
+                })
+                if(room.length > 0) socket.join(room)
+            } catch (error) {
+                console.log(error)
+            }
+        }else{
+            socket.disconnect()
+        }
     })
+
+    socket.on('joinConversation', (token, userId, callback)=>joinConversation(token, userId, io, callback))
+    socket.on('sendMessage', (message, callback)=>addMessage(message, socket, callback))
 })
+
 
 //middleware & static files
 app.use(express.urlencoded({ extended: true }));
@@ -61,8 +66,5 @@ app.get('/api/me', getMe)
 app.use('/api/user', userRouter)
 app.use('/api/conversation', conversationRouter)
 
-// app.post('/test', AuthMiddleware.authenticated, (req, res)=>{
-//     console.log('Okay')
-// })
 
 server.listen(process.env.PORT, ()=> console.log(`Listening on port ${process.env.PORT}...`))

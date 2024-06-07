@@ -72,18 +72,42 @@ const signUp = async (req, res) => {
   
 
 const signIn = async (req, res)=>{
-    const { error } = validatePayload(req.body); 
-    if (error) return res.status(400).json({success: false, message: error.details[0].message, token: ''});
+    let status;
+    let response = {
+        success: false,
+        message: '',
+        token: ''
+    }
+    try {
+        const { error } = validatePayload(req.body); 
+        if (error) {
+            status = 500
+            throw new Error(error.details[0])
+        }
   
-    let userFounded = await User.findOne({ email: req.body.email });
-    if (!userFounded) return res.status(400).json({success: false, message: 'USER_NOT_FOUND', token: ''});
+        let userFounded = await User.findOne({ email: req.body.email });
+        if (!userFounded) {
+            status = 404
+            throw new Error('USER_NOT_FOUND')
+        }
   
-    const validPassword = await bcrypt.compare(req.body.password, userFounded.password);
-    if (!validPassword) return res.status(400).json({success: false, message: 'INVALID_PASSWORD', token: ''});
+        const validPassword = await bcrypt.compare(req.body.password, userFounded.password);
+        if (!validPassword) {
+            status = 501
+            throw new Error('INVALID_PASSWORD')
+        }
   
-    const user = new User(userFounded)
-    const token = user.generateAuthToken();
-    res.json({success: true, message: 'Authenticated successfully', token});
+        const user = new User(userFounded)
+        status = 200
+        response.success = true
+        response.message = 'Authenticated successfully'
+        response.token = user.generateAuthToken();
+    } catch (error) {
+        if(!status) status = 500
+        response.message = error.message
+    }
+    
+    res.status(status).json(response);
 }
 
 
