@@ -68,7 +68,7 @@ const getFullConversation = async (req, res)=>{
     res.status(status).json(response)
 }
 
-const joinConversation = async (token, userId, io, callback)=>{
+const joinConversation = async (token, userId, socket, callback)=>{
     let error;
     let result;
     try {
@@ -82,21 +82,22 @@ const joinConversation = async (token, userId, io, callback)=>{
         conversation.members.push(userId)
         result = await conversation.save()
     } catch (err) {
-        error = err.message
+        error = err
     }
     callback(error, result)
 }
 
 const addMessage = async (message, socket, callback)=>{
     try {
-        const newMessage = new Message(message)
         const conversation = await Conversation.findById(message.to)
         if(!conversation) throw new Error('CONVERSATION_NOT_FOUND')
-        
+
+        const newMessage = new Message(message)
+       
         conversation.messages.push(newMessage)
         await conversation.save()
-        socket.broadcast.to(conversation.id).emit('newMessage')
-        callback()
+        socket.broadcast.to(conversation.id).emit('newMessage', newMessage)
+        callback(null, newMessage)
     } catch (error) {
         callback(error)
     }

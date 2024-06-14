@@ -52,7 +52,7 @@ io.on('connection', (socket)=>{
         }
     })
 
-    socket.on('joinConversation', (token, userId, callback)=>joinConversation(token, userId, io, callback))
+    socket.on('joinConversation', (token, userId, callback)=>joinConversation(token, userId, socket, callback))
     socket.on('sendMessage', (message, callback)=>addMessage(message, socket, callback))
 })
 
