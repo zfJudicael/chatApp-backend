@@ -8,7 +8,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io'
 import { Message, Conversation } from './models/conversation.model.js';
-import { addMessage, joinConversation } from './controller/conversation.controller.js';
+import { createConversation, joinConversation, addMessage } from './controller/conversation.controller.js';
 import { getMe } from './controller/auth.controllers.js';
 
 
@@ -52,7 +52,8 @@ io.on('connection', (socket)=>{
         }
     })
 
-    socket.on('joinConversation', (token, userId, callback)=>joinConversation(token, userId, socket, callback))
+    socket.on('createConversation', (userToken, conversationName, callback)=> createConversation(userToken, conversationName, socket, callback))
+    socket.on('joinConversation', (conversationToken, userId, callback)=>joinConversation(conversationToken, userId, socket, callback))
     socket.on('sendMessage', (message, callback)=>addMessage(message, socket, callback))
 })
 

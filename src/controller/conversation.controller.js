@@ -1,28 +1,27 @@
 import { Conversation, Message } from "../models/conversation.model.js"
 import { ObjectId } from "mongodb";
 import Jwt from 'jsonwebtoken';
+import { User } from "../models/user.model.js";
 
-const createConversation = async (req, res)=>{
-    let status;
-    let response = {
-        success: false,
-        message: '',
-        conversation: null
-    }
+const createConversation = async (userToken, conversationName, socket, callback)=>{
+    let error;
+    let result;
     try {
-        let tempConvesation = req.body.conversation
-        const conversation = new Conversation({name: tempConvesation.name, members: [req.currentUser._id]})
-        const newConversation = await conversation.save()   
-        response.success = true
-        response.message = 'CONVERSATION_CREATED'
-        response.conversation = newConversation
-        status = 200
-    } catch (error) {
-        response.success = false
-        response.message = 'CONVERSATION_NOT_CREATED'
-        status = 500
+        const jwtPrivateKey = process.env.PRIVATE_KEY;
+        const decoded = Jwt.verify(userToken, jwtPrivateKey);
+
+        const user = await User.findById(new ObjectId(decoded._id)).select(('-password'))
+
+        if(!user) throw new Error('USER_NOT_FOUND')
+
+        const conversation = new Conversation({name: conversationName, members: [user._id]})
+        result = await conversation.save() 
+
+        socket.join(result.id)
+    } catch (err) {
+        error = err
     }
-    res.status(status).json(response)
+    callback(error, result)
 }
 
 const getConversationsList = async (req, res)=>{
@@ -68,21 +67,27 @@ const getFullConversation = async (req, res)=>{
     res.status(status).json(response)
 }
 
-const joinConversation = async (token, userId, socket, callback)=>{
+const joinConversation = async (conversationToken, userId, socket, callback)=>{
     let error;
     let result;
     try {
         const jwtPrivateKey = process.env.PRIVATE_KEY;
-        const decoded = Jwt.verify(token, jwtPrivateKey);
-
+        const decoded = Jwt.verify(conversationToken, jwtPrivateKey);
         const conversation = await Conversation.findById(new ObjectId(decoded._id))
                                         .select(('-messages'))
         if(!conversation) throw new Error('CONVERSATION_NOT_FOUND')
 
+        const isMember = conversation.members.some((membersId)=>{ membersId.equals(userId)});
+        if(!isMember) {
+            result = conversation;
+            throw new Error('USER_ALREADY_MEMBER_OF_THE_CONVERSATION')
+        }
+        
         conversation.members.push(userId)
         result = await conversation.save()
+        socket.join(result.id)
     } catch (err) {
-        error = err
+        error = err.message
     }
     callback(error, result)
 }

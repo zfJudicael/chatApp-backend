@@ -10,7 +10,7 @@ const messageSchema = new mongoose.Schema({
     },
     to: mongoose.Schema.Types.ObjectId,
     value: String,
-    createdAt: { type: Date, default: Date.now()}
+    createdAt: { type: Date, default: ()=>Date.now()}
 })
 
 const Message = mongoose.model('Message', messageSchema)
